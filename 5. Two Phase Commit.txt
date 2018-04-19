@@ -1,0 +1,192 @@
+Two Phase Commit
+
+Server.java
+import java.io.*;
+import java.net.*;
+import java.util.Scanner;
+
+public class Server
+{
+    public static void main(String[] args)
+    {
+        try
+        {
+        	int i, num_clients;
+        	String server_response;
+        	Scanner scanner = new Scanner(System.in);
+            ServerSocket server_socket=new ServerSocket(6000);  
+			System.out.println("Server Started.");
+
+			System.out.println("\nEnter Number of Clients:");
+			num_clients = scanner.nextInt();
+
+			Socket client_socket[] = new Socket[num_clients];
+			DataOutputStream dataOutputStream[] = new DataOutputStream[num_clients]; //Allocate Memory later
+			DataInputStream dataInputStream[] = new DataInputStream[num_clients];
+			int client_response[] = new int[num_clients];
+
+			System.out.println("\nWaiting For "+num_clients+" Clients to Connect");
+
+			for(i=0;i<num_clients;i++)
+			{
+        	    client_socket[i] = server_socket.accept();
+        	    dataOutputStream[i] = new DataOutputStream(client_socket[i].getOutputStream());
+        	    dataOutputStream[i].write(i); //Write Client ID to Client
+                System.out.println("Client "+i+" Connected");
+            }
+
+       	    for(i=0;i<num_clients;i++)
+			{
+        	    dataOutputStream[i].writeUTF("Query");
+        	    dataOutputStream[i].flush();
+        	}
+
+            System.out.println("Query Sent To All Clients");
+
+            for(i=0;i<num_clients;i++)
+			{
+       		    dataInputStream[i] = new DataInputStream(client_socket[i].getInputStream());
+       	 	    client_response[i] = (int)dataInputStream[i].read();
+              	System.out.println("Response "+client_response[i]+" From Client "+i+" Received");
+          	}
+
+          	for(i=0;i<num_clients && client_response[i] == 1;i++)
+			{
+				//client_response[i] == 1 ensures all are Commit
+			}
+
+            if(i==num_clients)
+            	server_response = "Global Commit";
+            else
+        		server_response = "Global Abort";
+            
+            System.out.println("Sending Response "+server_response+" to All Clients");
+            for(i=0;i<num_clients;i++)
+			{
+        	    dataOutputStream[i].writeUTF(server_response);
+  		    	dataOutputStream[i].flush();
+            }
+        }
+        catch(IOException e)
+        {
+            e.printStackTrace();
+        }
+    }
+}
+
+Client.java
+import com.mongodb.client.MongoDatabase; 
+import com.mongodb.MongoClient; 
+import org.bson.Document; 
+import com.mongodb.client.MongoCollection;
+import java.io.*;
+import java .net.*;
+import java.util.Scanner;
+public class Client
+ {
+    public static void main(String args[])
+    {
+        try 
+        {
+            Scanner scanner = new Scanner(System.in);
+            String data;
+            int client_response = 1;
+            int client_id;
+
+            MongoClient mongo = new MongoClient();
+          	System.out.println("Connected to the database successfully"); 
+
+			MongoDatabase db = mongo.getDatabase("test");
+			MongoCollection<Document> collection = db.getCollection("TwoPhase");
+
+			System.out.println("Enter Data to Insert into Collection TwoPhase: ");
+			data = scanner.next();
+
+            Socket socket = new Socket("localhost",6000);
+			System.out.println("Connected to Server.");
+
+            DataInputStream dataInputStream = new DataInputStream(socket.getInputStream());
+            client_id = (int)dataInputStream.read();
+
+            String server_response = dataInputStream.readUTF(); //read a string encoded in UTF-8
+            if(server_response.equals("Query"))
+            {
+                System.out.println("Please Choose An Operation:\n1:Commit\n2:Abort");
+                client_response = scanner.nextInt();
+            }
+            DataOutputStream dataOutputStream = new DataOutputStream(socket.getOutputStream());
+            dataOutputStream.write(client_response);
+
+            server_response = dataInputStream.readUTF();
+
+            System.out.println("Received "+server_response+" From Server");
+
+            if(server_response.equals("Global Commit"))
+            {
+           		System.out.println("\nInserting "+data+" into Collection TwoPhase");
+				Document document = new Document("Client_ID", client_id)
+				.append("Data", data);
+		        collection.insertOne(document); 
+			}
+			else
+			{
+				System.out.println("Insertion into database Aborted");
+			}
+
+            dataInputStream.close();
+            dataOutputStream.close();
+            socket.close();
+            mongo.close();
+
+        } 
+        catch (IOException e) 
+        {
+        	System.out.println("**** ERROR ******");
+            e.printStackTrace();
+        }
+    }
+}
+
+Output:
+Server:
+>java -cp mongodb-driver-3.0.2.jar;mongodb-driver-core-3.0.2.jar;bson-3.0.2.jar; Server
+Server Started.
+
+Enter Number of Clients:
+2
+
+Waiting For 2 Clients to Connect
+Client 0 Connected
+Client 1 Connected
+Query Sent To All Clients
+Response 1 From Client 0 Received
+Response 1 From Client 1 Received
+Sending Response Global Commit to All Clients
+
+Client 1:
+Enter Data to Insert into Collection TwoPhase:
+ABCD
+Connected to Server.
+Please Choose An Operation:
+1:Commit
+2:Abort
+1
+Received Global Commit From Server
+
+Inserting ABCD into Collection TwoPhase
+Client 2
+Enter Data to Insert into Collection TwoPhase:
+DEFH
+Connected to Server.
+Please Choose An Operation:
+1:Commit
+2:Abort
+1
+Received Global Commit From Server
+
+Inserting DEFH into Collection TwoPhase
+
+Mongo Shell:
+> db.TwoPhase.find()
+{ "_id" : ObjectId("5a85b8c8e0e2ca077c040881"), "Client_ID" : 0, "Data" : "ABCD" }
+{ "_id" : ObjectId("5a85b8c8e0e2ca0b44f9e6ff"), "Client_ID" : 1, "Data" : "DEFH" }

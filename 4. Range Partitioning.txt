@@ -1,0 +1,397 @@
+SL-6 4. Implement any one Partitioning technique in Parallel Databases
+
+import java.sql.*;
+import java.util.Scanner;
+
+class range{   
+	Connection conn;
+	Statement stmt,stmt1;
+	Scanner sc;
+	int num_partitions;
+	String partition_field;
+	ResultSet rs,rs1;
+
+	range(){
+		try{
+			Class.forName("com.mysql.jdbc.Driver");  
+		    conn = DriverManager.getConnection("jdbc:mysql://127.0.0.1/partitioning","root","");//partitioning:database name
+		    stmt=conn.createStatement();
+		    stmt1=conn.createStatement();
+			sc = new Scanner(System.in);
+
+			stmt.executeUpdate("DROP TABLE IF EXISTS employees");
+		    stmt.executeUpdate("CREATE TABLE `employees` (`id` int(11) NOT NULL,`fname` varchar(25) NOT NULL,`lname` varchar(25) NOT NULL) ");
+			stmt.executeUpdate("INSERT INTO `employees` (`id`, `fname`, `lname`) VALUES (1, 'Bob', 'Taylor'), (2, 'Frank', 'Williams'), (3, 'Ellen', 'Johnson'), (4, 'Jim', 'Smith'),(5, 'Mary', 'Jones'),(6, 'Linda', 'Black'),(7, 'Ed', 'Jones'),(8, 'June', 'Wilson'),(9, 'Andy', 'Smith'),(10, 'Lou', 'Waters'),(11, 'Jill', 'Stone'),(12, 'Roger', 'White'),(13, 'Howard', 'Andrews'),(14, 'Fred', 'Goldberg'),(15, 'Barbara', 'Brown'),(16, 'Alice', 'Rogers'),(17, 'Mark', 'Morgan'),(18, 'Karen', 'Cole');");
+	    	rs = stmt.executeQuery("SELECT * FROM employees");
+
+	    	System.out.println("Employee Table:\nid\tfname\tlname");
+	    	 while(rs.next()){
+         		System.out.println(rs.getInt("id")+"\t"+rs.getString("fname")+"\t"+rs.getString("lname"));
+      		}
+      		rs.close();
+	    }
+	    catch(Exception e){ 
+	    	System.out.println("\t -- ERROR :  "+e);
+	    }   
+	}
+
+	public void createPartitions(){
+		int i;
+		String partition_value,sql;
+
+		System.out.print("Enter Number of Partitions: ");
+		num_partitions = sc.nextInt();
+
+		System.out.print("Enter Field to Partition on (must be INT or DATE format): ");
+		partition_field = sc.next();
+
+		sql = "ALTER TABLE employees PARTITION BY RANGE("+partition_field+") (";
+
+		System.out.print("Enter Upper Limits of Partitions\n");
+		for(i=0;i<num_partitions-1;i++){
+			System.out.print("p"+i+": ");
+			partition_value = sc.next();
+			sql += "PARTITION p"+i+" VALUES LESS THAN ("+partition_value+"),";
+		}
+
+		//Outside For cause Don't want comma at the end
+		System.out.print("p"+i+": ");
+		partition_value = sc.next();
+		sql += "PARTITION p"+i+" VALUES LESS THAN ("+partition_value+"));";
+		try{
+			stmt.executeUpdate(sql);
+		}
+	    catch(Exception e){
+	    	System.out.println("\t -- ERROR : "+e); 
+	    }
+	}
+
+	public void describePartitions(){
+		try{
+			rs = stmt.executeQuery("SELECT `PARTITION_NAME`,`PARTITION_EXPRESSION`,`PARTITION_METHOD`,`PARTITION_DESCRIPTION` FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_NAME='employees' AND TABLE_SCHEMA='partitioning'");
+			System.out.println("Name\tExpr\tMethod\tDesc"); 
+			while(rs.next()){
+         		System.out.println(rs.getString(1)+"\t"+rs.getString(2)+"\t"+rs.getString(3)+"\t"+rs.getString(4));
+      		}
+      	}
+		catch(Exception e){ 
+	    	System.out.println("\t -- ERROR :  "+e);
+	    }
+	}
+
+    public void displayPartitions(){
+    	String p_name;		
+		try{
+			rs1 = stmt1.executeQuery("SELECT `PARTITION_NAME` FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_NAME='employees' AND TABLE_SCHEMA='partitioning'");
+			while(rs1.next()){
+				p_name = rs1.getString(1);
+    			rs = stmt.executeQuery("SELECT * FROM employees PARTITION ("+p_name+");");
+				System.out.println("--- Partition "+p_name+" ---\nid\tfname\tlname\n--------------------"); 
+				while(rs.next()){
+         			System.out.println(rs.getString(1)+"\t"+rs.getString(2)+"\t"+rs.getString(3));
+      			}
+      		}
+      	}
+		catch(Exception e){ 
+	    	System.out.println("\t -- ERROR :  "+e);
+	    }
+	} 
+
+    public void dropPartition(){
+		String pd;
+		try{
+			System.out.print("Enter Partition to be Dropped: ");
+			pd = sc.next();
+
+			stmt.executeUpdate("ALTER TABLE employees DROP PARTITION "+pd+";");
+      	}
+		catch(Exception e){ 
+	    	System.out.println("\t -- ERROR :  "+e);
+	    }
+	} 
+
+	public void splitPartition(){
+		String p_name,p_low,p_upper,min,max;
+		try{
+			System.out.print("Enter Partition to be Split: ");
+			p_name = sc.next();
+			System.out.print("Enter Point at which to Split: ");
+			p_low = sc.next();
+
+			rs1 = stmt1.executeQuery("SELECT `PARTITION_DESCRIPTION` FROM INFORMATION_SCHEMA.PARTITIONS WHERE TABLE_NAME='employees'AND `PARTITION_NAME` = '"+p_name+"'");
+
+			while(rs1.next()){
+				p_upper = rs1.getString(1);
+				stmt.executeUpdate("ALTER TABLE employees REORGANIZE PARTITION "+p_name+" INTO (PARTITION "+p_name+"0 VALUES LESS THAN ("+p_low+"),PARTITION "+p_name+"1 VALUES LESS THAN ("+p_upper+"));");
+      		}
+      	}
+		catch(Exception e){ 
+	    	System.out.println("\t -- ERROR :  "+e);
+	    }
+	}
+
+	public int showMenu(){
+            int option = 0;
+            System.out.println("Menu:");
+            System.out.println("\t1. Create Partitions");
+            System.out.println("\t2. Drop Partition");
+            System.out.println("\t3. Split Partition");
+            System.out.println("\t4. Describe Partitions");
+            System.out.println("\t5. Display Partition contents");
+            System.out.println("\t6. Exit");
+            System.out.print("Enter Option: ");
+            option = sc.nextInt();
+            return option;
+	}
+
+    public static void main(String args[]){  
+    	range r = new range();
+    	int mOption = 0;   
+
+        do{
+           mOption = r.showMenu();
+            
+            switch (mOption) {
+                case 1: r.createPartitions();
+                		break;
+            
+                case 2: r.dropPartition();
+                         break;
+            
+                case 3: r.splitPartition();
+                        break;
+            
+                case 4: r.describePartitions();
+                        break;
+            
+                case 5: r.displayPartitions();
+                        break;
+
+                case 6: System.out.println("\t\tExitting\n");
+                        break;
+
+                default: if(mOption!=6)
+							System.out.println("Enter valid Option");
+            }
+        } while (mOption != 6);
+
+		r.sc.close(); //Scanner
+	    try{
+	    	r.conn.close();
+  			r.rs.close();
+      		r.rs1.close();
+	    }
+	    catch(Exception e){ 
+	    	System.out.println("\t -- ERROR :  "+e);
+	    } 
+    }  
+}  
+
+Output:
+$ ls
+mysql-connector-java-5.1.46-bin.jar  range.java
+$ javac -cp .:mysql-connector-java-5.1.46-bin.jar range.java
+$ java -cp .:mysql-connector-java-5.1.46-bin.jar range
+Employee Table:
+id	fname	lname
+1	Bob	Taylor
+2	Frank	Williams
+3	Ellen	Johnson
+4	Jim	Smith
+5	Mary	Jones
+6	Linda	Black
+7	Ed	Jones
+8	June	Wilson
+9	Andy	Smith
+10	Lou	Waters
+11	Jill	Stone
+12	Roger	White
+13	Howard	Andrews
+14	Fred	Goldberg
+15	Barbara	Brown
+16	Alice	Rogers
+17	Mark	Morgan
+18	Karen	Cole
+Menu:
+	1. Create Partitions
+	2. Drop Partition
+	3. Split Partition
+	4. Describe Partitions
+	5. Display Partition contents
+	6. Exit
+Enter Option: 1
+Enter Number of Partitions: 3
+Enter Field to Partition on (must be INT or DATE format): id
+Enter Upper Limits of Partitions
+p0: 4
+p1: 10
+p2: 20
+Menu:
+	1. Create Partitions
+	2. Drop Partition
+	3. Split Partition
+	4. Describe Partitions
+	5. Display Partition contents
+	6. Exit
+Enter Option: 4
+Name	Expr	Method	Desc
+p0	id	RANGE	4
+p1	id	RANGE	10
+p2	id	RANGE	20
+Menu:
+	1. Create Partitions
+	2. Drop Partition
+	3. Split Partition
+	4. Describe Partitions
+	5. Display Partition contents
+	6. Exit
+Enter Option: 5
+--- Partition p0 ---
+id	fname	lname
+--------------------
+1	Bob	Taylor
+2	Frank	Williams
+3	Ellen	Johnson
+--- Partition p1 ---
+id	fname	lname
+--------------------
+4	Jim	Smith
+5	Mary	Jones
+6	Linda	Black
+7	Ed	Jones
+8	June	Wilson
+9	Andy	Smith
+--- Partition p2 ---
+id	fname	lname
+--------------------
+10	Lou	Waters
+11	Jill	Stone
+12	Roger	White
+13	Howard	Andrews
+14	Fred	Goldberg
+15	Barbara	Brown
+16	Alice	Rogers
+17	Mark	Morgan
+18	Karen	Cole
+Menu:
+	1. Create Partitions
+	2. Drop Partition
+	3. Split Partition
+	4. Describe Partitions
+	5. Display Partition contents
+	6. Exit
+Enter Option: 3
+Enter Partition to be Split: p2
+Enter Point at which to Split: 14
+Menu:
+	1. Create Partitions
+	2. Drop Partition
+	3. Split Partition
+	4. Describe Partitions
+	5. Display Partition contents
+	6. Exit
+Enter Option: 4
+Name	Expr	Method	Desc
+p0	id	RANGE	4
+p1	id	RANGE	10
+p20	id	RANGE	14
+p21	id	RANGE	20
+Menu:
+	1. Create Partitions
+	2. Drop Partition
+	3. Split Partition
+	4. Describe Partitions
+	5. Display Partition contents
+	6. Exit
+Enter Option: 5
+--- Partition p0 ---
+id	fname	lname
+--------------------
+1	Bob	Taylor
+2	Frank	Williams
+3	Ellen	Johnson
+--- Partition p1 ---
+id	fname	lname
+--------------------
+4	Jim	Smith
+5	Mary	Jones
+6	Linda	Black
+7	Ed	Jones
+8	June	Wilson
+9	Andy	Smith
+--- Partition p20 ---
+id	fname	lname
+--------------------
+10	Lou	Waters
+11	Jill	Stone
+12	Roger	White
+13	Howard	Andrews
+--- Partition p21 ---
+id	fname	lname
+--------------------
+14	Fred	Goldberg
+15	Barbara	Brown
+16	Alice	Rogers
+17	Mark	Morgan
+18	Karen	Cole
+Menu:
+	1. Create Partitions
+	2. Drop Partition
+	3. Split Partition
+	4. Describe Partitions
+	5. Display Partition contents
+	6. Exit
+Enter Option: 2
+Enter Partition to be Dropped: p20
+Menu:
+	1. Create Partitions
+	2. Drop Partition
+	3. Split Partition
+	4. Describe Partitions
+	5. Display Partition contents
+	6. Exit
+Enter Option: 4
+Name	Expr	Method	Desc
+p0	id	RANGE	4
+p1	id	RANGE	10
+p21	id	RANGE	20
+Menu:
+	1. Create Partitions
+	2. Drop Partition
+	3. Split Partition
+	4. Describe Partitions
+	5. Display Partition contents
+	6. Exit
+Enter Option: 5
+--- Partition p0 ---
+id	fname	lname
+--------------------
+1	Bob	Taylor
+2	Frank	Williams
+3	Ellen	Johnson
+--- Partition p1 ---
+id	fname	lname
+--------------------
+4	Jim	Smith
+5	Mary	Jones
+6	Linda	Black
+7	Ed	Jones
+8	June	Wilson
+9	Andy	Smith
+--- Partition p21 ---
+id	fname	lname
+--------------------
+14	Fred	Goldberg
+15	Barbara	Brown
+16	Alice	Rogers
+17	Mark	Morgan
+18	Karen	Cole
+Menu:
+	1. Create Partitions
+	2. Drop Partition
+	3. Split Partition
+	4. Describe Partitions
+	5. Display Partition contents
+	6. Exit
+Enter Option: 6
+		Exitting

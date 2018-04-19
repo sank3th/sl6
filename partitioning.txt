@@ -1,0 +1,193 @@
+    ->     hired DATE NOT NULL DEFAULT '1970-01-01',
+    ->     separated DATE NOT NULL DEFAULT '9999-12-31',
+    ->     job_code INT NOT NULL,
+    ->     store_id INT NOT NULL
+    -> )
+    -> ;
+Query OK, 0 rows affected (0.79 sec)
+
+mysql> drop table employees;
+Query OK, 0 rows affected (0.22 sec)
+
+mysql> CREATE TABLE employees (
+    ->     id INT NOT NULL,
+    ->     fname VARCHAR(30),
+    ->     lname VARCHAR(30),
+    ->     hired DATE NOT NULL DEFAULT '1970-01-01',
+    ->     separated DATE NOT NULL DEFAULT '9999-12-31',
+    ->     job_code INT NOT NULL,
+    ->     store_id INT NOT NULL
+    -> )
+    -> PARTITION BY RANGE (store_id) (
+    ->     PARTITION p0 VALUES LESS THAN (6),
+    ->     PARTITION p1 VALUES LESS THAN (11),
+    ->     PARTITION p2 VALUES LESS THAN (16),
+    ->     PARTITION p3 VALUES LESS THAN MAXVALUE
+    -> );
+Query OK, 0 rows affected (1.20 sec)
+
+mysql> insert into employees values(72, 'Mitchell', 'Wilson', '1998-06-25', '201
+8-04-016', 13,12);
+Query OK, 1 row affected (0.09 sec)
+
+mysql> show table status;
++-----------+--------+---------+------------+------+----------------+-----------
+--+-----------------+--------------+-----------+----------------+---------------
+------+---------------------+------------+-----------------+----------+---------
+-------+---------+
+| Name      | Engine | Version | Row_format | Rows | Avg_row_length | Data_lengt
+h | Max_data_length | Index_length | Data_free | Auto_increment | Create_time
+      | Update_time         | Check_time | Collation       | Checksum | Create_o
+ptions | Comment |
++-----------+--------+---------+------------+------+----------------+-----------
+--+-----------------+--------------+-----------+----------------+---------------
+------+---------------------+------------+-----------------+----------+---------
+-------+---------+
+| employees | InnoDB |      10 | Dynamic    |    1 |          65536 |       6553
+6 |               0 |            0 |         0 |           NULL | 2018-04-16 15:
+49:06 | 2018-04-16 15:55:39 | NULL       | utf8_general_ci |     NULL | partitio
+ned    |         |
++-----------+--------+---------+------------+------+----------------+-----------
+--+-----------------+--------------+-----------+----------------+---------------
+------+---------------------+------------+-----------------+----------+---------
+-------+---------+
+1 row in set (0.05 sec)
+
+mysql>
+mysql> insert into employees values(11, 'hARSHADA', 'DEOKAR', '1978-10-21','1978
+-02-21', 11,2);
+Query OK, 1 row affected (0.06 sec)
+
+mysql>
+mysql> insert into employees values(12, 'RAKHI', 'SOSLE', '1998-06-25','1998-06-
+25', 13,15);
+Query OK, 1 row affected (0.07 sec)
+
+mysql>
+mysql> insert into employees values(13, 'Mill', 'lson', '1920-09-22','1997-04-21
+', 11,15);
+Query OK, 1 row affected (0.05 sec)
+
+mysql> SELECT * FROM EMPLOYEES;
++----+----------+--------+------------+------------+----------+----------+
+| id | fname    | lname  | hired      | separated  | job_code | store_id |
++----+----------+--------+------------+------------+----------+----------+
+| 11 | hARSHADA | DEOKAR | 1978-10-21 | 1978-02-21 |       11 |        2 |
+| 72 | Mitchell | Wilson | 1998-06-25 | 2018-04-16 |       13 |       12 |
+| 12 | RAKHI    | SOSLE  | 1998-06-25 | 1998-06-25 |       13 |       15 |
+| 13 | Mill     | lson   | 1920-09-22 | 1997-04-21 |       11 |       15 |
++----+----------+--------+------------+------------+----------+----------+
+4 rows in set (0.03 sec)
+
+mysql> insert into employees values(14, 'JKIOI', 'SOSLE', '1998-06-25','1998-06-
+25', 13,3);
+Query OK, 1 row affected (0.05 sec)
+
+mysql> insert into employees values(72, 'KOIRKJ', 'Wilson', '1998-06-25','1998-0
+6-25', 12,5);
+Query OK, 1 row affected (0.06 sec)
+
+mysql> SELECT * FROM EMPLOYEES;
++----+----------+--------+------------+------------+----------+----------+
+| id | fname    | lname  | hired      | separated  | job_code | store_id |
++----+----------+--------+------------+------------+----------+----------+
+| 11 | hARSHADA | DEOKAR | 1978-10-21 | 1978-02-21 |       11 |        2 |
+| 14 | JKIOI    | SOSLE  | 1998-06-25 | 1998-06-25 |       13 |        3 |
+| 72 | KOIRKJ   | Wilson | 1998-06-25 | 1998-06-25 |       12 |        5 |
+| 72 | Mitchell | Wilson | 1998-06-25 | 2018-04-16 |       13 |       12 |
+| 12 | RAKHI    | SOSLE  | 1998-06-25 | 1998-06-25 |       13 |       15 |
+| 13 | Mill     | lson   | 1920-09-22 | 1997-04-21 |       11 |       15 |
++----+----------+--------+------------+------------+----------+----------+
+6 rows in set (0.00 sec)
+
+mysql> explain partitions select * from employees;
++----+-------------+-----------+-------------+------+---------------+------+----
+-----+------+------+----------+-------+
+| id | select_type | table     | partitions  | type | possible_keys | key  | key
+_len | ref  | rows | filtered | Extra |
++----+-------------+-----------+-------------+------+---------------+------+----
+-----+------+------+----------+-------+
+|  1 | SIMPLE      | employees | p0,p1,p2,p3 | ALL  | NULL          | NULL | NUL
+L    | NULL |    6 |   100.00 | NULL  |
++----+-------------+-----------+-------------+------+---------------+------+----
+-----+------+------+----------+-------+
+1 row in set, 2 warnings (0.05 sec)
+
+mysql> SELECT * FROM EMPLOYEES partition(p0);
++----+----------+--------+------------+------------+----------+----------+
+| id | fname    | lname  | hired      | separated  | job_code | store_id |
++----+----------+--------+------------+------------+----------+----------+
+| 11 | hARSHADA | DEOKAR | 1978-10-21 | 1978-02-21 |       11 |        2 |
+| 14 | JKIOI    | SOSLE  | 1998-06-25 | 1998-06-25 |       13 |        3 |
+| 72 | KOIRKJ   | Wilson | 1998-06-25 | 1998-06-25 |       12 |        5 |
++----+----------+--------+------------+------------+----------+----------+
+3 rows in set (0.00 sec)
+
+mysql> SELECT * FROM EMPLOYEES partition(p1);
+Empty set (0.00 sec)
+
+mysql> SELECT * FROM EMPLOYEES partition(p2);
++----+----------+--------+------------+------------+----------+----------+
+| id | fname    | lname  | hired      | separated  | job_code | store_id |
++----+----------+--------+------------+------------+----------+----------+
+| 72 | Mitchell | Wilson | 1998-06-25 | 2018-04-16 |       13 |       12 |
+| 12 | RAKHI    | SOSLE  | 1998-06-25 | 1998-06-25 |       13 |       15 |
+| 13 | Mill     | lson   | 1920-09-22 | 1997-04-21 |       11 |       15 |
++----+----------+--------+------------+------------+----------+----------+
+3 rows in set (0.00 sec)
+
+mysql> insert into employees values(14, 'JKIOI', 'SOSLE', '1998-06-25','1998-06-
+25', 13,25);
+Query OK, 1 row affected (0.06 sec)
+
+mysql> SELECT * FROM EMPLOYEES partition(p3);
++----+-------+-------+------------+------------+----------+----------+
+| id | fname | lname | hired      | separated  | job_code | store_id |
++----+-------+-------+------------+------------+----------+----------+
+| 14 | JKIOI | SOSLE | 1998-06-25 | 1998-06-25 |       13 |       25 |
++----+-------+-------+------------+------------+----------+----------+
+1 row in set (0.00 sec)
+
+mysql> alter table employees drop partition p3;
+Query OK, 0 rows affected (0.47 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql> ALTER TABLE employees ADD PARTITION (PARTITION p3 values less than (27));
+
+Query OK, 0 rows affected (0.48 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql> ALTER TABLE employees
+    ->     REORGANIZE PARTITION p0 INTO (
+    ->         PARTITION n0 VALUES LESS THAN (3),
+    ->         PARTITION n1 VALUES LESS THAN (6)
+    -> );
+Query OK, 0 rows affected (1.49 sec)
+Records: 0  Duplicates: 0  Warnings: 0
+
+mysql> SELECT * FROM EMPLOYEES partition(p2);
++----+----------+--------+------------+------------+----------+----------+
+| id | fname    | lname  | hired      | separated  | job_code | store_id |
++----+----------+--------+------------+------------+----------+----------+
+| 72 | Mitchell | Wilson | 1998-06-25 | 2018-04-16 |       13 |       12 |
+| 12 | RAKHI    | SOSLE  | 1998-06-25 | 1998-06-25 |       13 |       15 |
+| 13 | Mill     | lson   | 1920-09-22 | 1997-04-21 |       11 |       15 |
++----+----------+--------+------------+------------+----------+----------+
+3 rows in set (0.00 sec)
+
+mysql> SELECT * FROM EMPLOYEES partition(n0);
++----+----------+--------+------------+------------+----------+----------+
+| id | fname    | lname  | hired      | separated  | job_code | store_id |
++----+----------+--------+------------+------------+----------+----------+
+| 11 | hARSHADA | DEOKAR | 1978-10-21 | 1978-02-21 |       11 |        2 |
++----+----------+--------+------------+------------+----------+----------+
+1 row in set (0.00 sec)
+
+mysql> SELECT * FROM EMPLOYEES partition(n1);
++----+--------+--------+------------+------------+----------+----------+
+| id | fname  | lname  | hired      | separated  | job_code | store_id |
++----+--------+--------+------------+------------+----------+----------+
+| 14 | JKIOI  | SOSLE  | 1998-06-25 | 1998-06-25 |       13 |        3 |
+| 72 | KOIRKJ | Wilson | 1998-06-25 | 1998-06-25 |       12 |        5 |
++----+--------+--------+------------+------------+----------+----------+
+2 rows in set (0.00 sec)

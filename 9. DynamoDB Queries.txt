@@ -1,0 +1,643 @@
+SL 6 9. Design database schemas and implement min 10 queries using DynamoDB key-value based databases.
+
+1.
+var params = {
+     TableName : "MyMusic",
+ KeySchema: [
+ {
+ AttributeName: "Artist",
+ KeyType: "HASH",           //Partition key
+ },
+ {
+ AttributeName: "SongTitle",
+ KeyType: "RANGE"           //Sort key
+ }
+ ],
+ AttributeDefinitions: [
+ {	
+ AttributeName: "Artist",
+ AttributeType: "S"
+ },
+ {
+ AttributeName: "SongTitle",
+ AttributeType: "S"
+ }
+ ],
+ ProvisionedThroughput: {
+ ReadCapacityUnits: 1,
+ WriteCapacityUnits: 1
+ }
+};
+
+dynamodb.createTable(params,function(err,data) {
+    if(err)
+        console.log(JSON.stringify(err,null,2))
+    else
+        console.log(JSON.stringify(data,null,2))
+});
+
+=> 
+{
+  "TableDescription": {
+    "AttributeDefinitions": [
+      {
+        "AttributeName": "Artist",
+        "AttributeType": "S"
+      },
+      {
+        "AttributeName": "SongTitle",
+        "AttributeType": "S"
+      }
+    ],
+    "TableName": "MyMusic",
+    "KeySchema": [
+      {
+        "AttributeName": "Artist",
+        "KeyType": "HASH"
+      },
+      {
+        "AttributeName": "SongTitle",
+        "KeyType": "RANGE"
+      }
+    ],
+    "TableStatus": "ACTIVE",
+    "CreationDateTime": "2017-02-09T09:37:57.622Z",
+    "ProvisionedThroughput": {
+      "LastIncreaseDateTime": "1970-01-01T00:00:00.000Z",
+      "LastDecreaseDateTime": "1970-01-01T00:00:00.000Z",
+      "NumberOfDecreasesToday": 0,
+      "ReadCapacityUnits": 1,
+      "WriteCapacityUnits": 1
+    },
+    "TableSizeBytes": 0,
+    "ItemCount": 0,
+    "TableArn": "arn:aws:dynamodb:ddblocal:000000000000:table/MyMusic"
+  }
+}
+
+
+
+2.
+var params = {
+    
+};
+dynamodb.listTables(params, function(err, data) {
+    if (err) console.log(err, err.stack); // an error occurred
+    else     console.log(data);           // successful response
+});
+
+=> 
+{"TableNames":["Music","MyMusic"]}
+
+
+3.
+var params = {
+    TableName: 'Music',
+};
+dynamodb.describeTable(params, function(err, data) {
+    if (err) print(err); // an error occurred
+    else console.log(JSON.stringify(data,null,2));            // successful response
+});
+
+=> 
+{
+  "Table": {
+    "AttributeDefinitions": [
+      {
+        "AttributeName": "Artist",
+        "AttributeType": "S"
+      },
+      {
+        "AttributeName": "SongTitle",
+        "AttributeType": "S"
+      }
+    ],
+    "TableName": "Music",
+    "KeySchema": [
+      {
+        "AttributeName": "Artist",
+        "KeyType": "HASH"
+      },
+      {
+        "AttributeName": "SongTitle",
+        "KeyType": "RANGE"
+      }
+    ],
+    "TableStatus": "ACTIVE",
+    "CreationDateTime": "2017-02-09T09:34:41.594Z",
+    "ProvisionedThroughput": {
+      "LastIncreaseDateTime": "1970-01-01T00:00:00.000Z",
+      "LastDecreaseDateTime": "1970-01-01T00:00:00.000Z",
+      "NumberOfDecreasesToday": 0,
+      "ReadCapacityUnits": 1,
+      "WriteCapacityUnits": 1
+    },
+    "TableSizeBytes": 0,
+    "ItemCount": 0,
+    "TableArn": "arn:aws:dynamodb:ddblocal:000000000000:table/Music"
+  }
+}
+
+
+4.
+var params = {
+    TableName: 'Music',
+    Item: {
+        "Artist": "NoOneYouKnow",
+        "SongTitle": "Call Me Today",
+        "AlbumTitle":"Somewhat Famous",
+        "Year": 2015,
+        "Price": 2.14,
+        "Genre": "Country",
+        "Tags": {
+        "Composers": [
+        "Smith",
+        "Jones",
+        "Davis"
+        ],
+        "LengthInSeconds": 214
+ }
+ }
+};
+dynamodb.putItem(params, function(err, data) {
+    if (err) console.log(JSON.stringify(err,null,2)); // an error occurred
+    else console.log(JSON.stringify(data,null,2));
+});
+
+=>
+ {}
+
+5.
+var params = {
+    TableName: 'Music',
+    Key: {
+ "Artist": "NoOneYouKnow",
+ "SongTitle": "Call Me Today"
+ }
+
+};
+
+dynamodb.getItem(params, function(err, data) {
+    if (err) console.log(JSON.stringify(err,null,2)); // an error occurred
+    else console.log(JSON.stringify(data,null,2));
+});
+
+=> 
+{
+  "Item": {
+    "Year": 2015,
+    "Tags": {
+      "Composers": [
+        "Smith",
+        "Jones",
+        "Davis"
+      ],
+      "LengthInSeconds": 214
+    },
+    "SongTitle": "Call Me Today",
+    "Price": 2.14,
+    "Genre": "Country",
+    "AlbumTitle": "Somewhat Famous",
+    "Artist": "NoOneYouKnow"
+  }
+}
+
+   
+6.
+var params = {
+    RequestItems: { // A map of TableName to Put or Delete requests for that table
+        "Music": [ 
+            {
+                PutRequest: {
+                    Item: { 
+                        "Artist": 'Owl City',
+                        "SongTitle":  'Fireflies',
+                        "AlbumTitle" : "Single"
+    
+                    }
+                }
+            },
+            {
+                PutRequest: {
+                    Item: { 
+                        "Artist": 'Greenday',
+                        "SongTitle":  'Holiday',
+                        "AlbumTitle" : "American Idiot"
+    
+                    }
+                }
+            },
+            {
+                PutRequest: {
+                    Item: { 
+                        "Artist": 'Linkin Park',
+                        "SongTitle":  'In The End',
+                        "AlbumTitle" : "Single"
+    
+                    }
+                }
+            }
+            ]}
+};
+
+dynamodb.batchWriteItem(params, function(err, data) {
+    if (err) console.log(JSON.stringify(err,null,2)); // an error occurred
+    else console.log(JSON.stringify(data,null,2));
+});
+
+=> 
+{
+  "UnprocessedItems": {}
+}
+
+
+
+
+7.
+var params = {
+    TableName:"Music"
+};
+
+dynamodb.scan(params, function(err, data) {
+    if (err) console.log(JSON.stringify(err,null,2)); // an error occurred
+    else console.log(JSON.stringify(data,null,2));
+});
+
+=> 
+{
+  "Items": [
+    {
+      "Artist": "Linkin Park",
+      "AlbumTitle": "Single",
+      "SongTitle": "In The End"
+    },
+    {
+      "Artist": "Greenday",
+      "AlbumTitle": "American Idiot",
+      "SongTitle": "Holiday"
+    },
+    {
+      "Artist": "Owl City",
+      "AlbumTitle": "Single",
+      "SongTitle": "Fireflies"
+    },
+    {
+      "Year": 2015,
+      "Tags": {
+        "Composers": [
+          "Smith",
+          "Jones",
+          "Davis"
+        ],
+        "LengthInSeconds": 214
+      },
+      "SongTitle": "Call Me Today",
+      "Price": 2.14,
+      "Genre": "Country",
+      "AlbumTitle": "Somewhat Famous",
+      "Artist": "NoOneYouKnow"
+    }
+  ],
+  "Count": 4,
+  "ScannedCount": 4
+}
+
+
+8.
+var params = {
+    TableName:"Music",
+    
+    KeyConditionExpression: "Artist=:artist",
+    ExpressionAttributeValues: {
+        ":artist" : "NoOneYouKnow"
+    }
+};
+
+dynamodb.query(params, function(err, data) {
+    if (err) console.log(JSON.stringify(err,null,2)); // an error occurred
+    else console.log(JSON.stringify(data,null,2));
+});
+
+=> 
+{
+  "Items": [
+    {
+      "Year": 2015,
+      "Tags": {
+        "Composers": [
+          "Smith",
+          "Jones",
+          "Davis"
+        ],
+        "LengthInSeconds": 214
+      },
+      "SongTitle": "Call Me Today",
+      "Price": 2.14,
+      "Genre": "Country",
+      "AlbumTitle": "Somewhat Famous",
+      "Artist": "NoOneYouKnow"
+    }
+  ],
+  "Count": 1,
+  "ScannedCount": 1
+}
+
+
+9. //Sorting - so same entry of NoOneYouKnow
+var params = {
+    TableName: 'Music',
+    Item: {
+        "Artist": "NoOneYouKnow",
+        "SongTitle": "Call Me Whenever",
+        "AlbumTitle":"Somewhat Famous",
+        "Year": 2016,
+        "Tags": {
+        "Composers": [
+        "Smith",
+        "Jones",
+        "Davis"
+        ],
+        "LengthInSeconds": 214
+ }
+ }
+};
+
+dynamodb.putItem(params, function(err, data) {
+    if (err) console.log(JSON.stringify(err,null,2)); // an error occurred
+    else console.log(JSON.stringify(data,null,2));
+});
+
+=> 
+{}
+
+var params = {
+    TableName:"Music",
+    
+    KeyConditionExpression: "Artist=:artist",
+    ExpressionAttributeValues: {
+        ":artist" : "NoOneYouKnow"
+    }
+};
+
+dynamodb.query(params, function(err, data) {
+    if (err) console.log(JSON.stringify(err,null,2)); // an error occurred
+    else console.log(JSON.stringify(data,null,2));
+});
+
+=> 
+{
+  "Items": [
+    {
+      "Year": 2015,
+      "Tags": {
+        "Composers": [
+          "Smith",
+          "Jones"
+        ],
+        "LengthInSeconds": 214
+      },
+      "SongTitle": "Call Me Today",
+      "Price": 3.15,
+      "Genre": "Country",
+      "AlbumTitle": "Somewhat Famous",
+      "Artist": "NoOneYouKnow",
+      "RecordLabel": "Global Records"
+    },
+    {
+      "AlbumTitle": "Somewhat Famous",
+      "Year": 2016,
+      "Tags": {
+        "Composers": [
+          "Smith",
+          "Jones",
+          "Davis"
+        ],
+        "LengthInSeconds": 214
+      },
+      "Artist": "NoOneYouKnow",
+      "SongTitle": "Call Me Whenever"
+    }
+  ],
+  "Count": 2,
+  "ScannedCount": 2
+}
+
+
+//Actual Query:
+var params = {
+    TableName:"Music",
+    
+    KeyConditionExpression: "Artist=:artist",
+    ScanIndexForward: false,
+    ExpressionAttributeValues: {
+        ":artist" : "NoOneYouKnow"
+    }
+};
+
+dynamodb.query(params, function(err, data) {
+    if (err) console.log(JSON.stringify(err,null,2)); // an error occurred
+    else console.log(JSON.stringify(data,null,2));
+});
+
+=> 
+{
+  "Items": [
+    {
+      "AlbumTitle": "Somewhat Famous",
+      "Year": 2016,
+      "Tags": {
+        "Composers": [
+          "Smith",
+          "Jones",
+          "Davis"
+        ],
+        "LengthInSeconds": 214
+      },
+      "Artist": "NoOneYouKnow",
+      "SongTitle": "Call Me Whenever"
+    },
+    {
+      "Year": 2015,
+      "Tags": {
+        "Composers": [
+          "Smith",
+          "Jones"
+        ],
+        "LengthInSeconds": 214
+      },
+      "SongTitle": "Call Me Today",
+      "Price": 3.15,
+      "Genre": "Country",
+      "AlbumTitle": "Somewhat Famous",
+      "Artist": "NoOneYouKnow",
+      "RecordLabel": "Global Records"
+    }
+  ],
+  "Count": 2,
+  "ScannedCount": 2
+}
+
+
+10.
+var params = {
+    TableName:"Music",
+    Key: {
+    "Artist":"NoOneYouKnow",
+    "SongTitle": "Call Me Today"
+    },
+    UpdateExpression: "SET RecordLabel= :label",
+    ExpressionAttributeValues: {
+        ":label" :"Global Records"
+    },
+    ReturnValues: "ALL_NEW"
+    
+};
+
+dynamodb.updateItem(params, function(err, data) {
+    if (err) console.log(JSON.stringify(err,null,2));
+    else 
+        console.log(JSON.stringify(data,null,2));
+});
+
+=> 
+{
+  "Attributes": {
+    "Tags": {
+      "Composers": [
+        "Smith",
+        "Jones",
+        "Davis"
+      ],
+      "LengthInSeconds": 214
+    },
+    "Year": 2015,
+    "Price": 2.14,
+    "SongTitle": "Call Me Today",
+    "Genre": "Country",
+    "AlbumTitle": "Somewhat Famous",
+    "Artist": "NoOneYouKnow",
+    "RecordLabel": "Global Records"
+  }
+}
+
+
+
+11.
+var params = {
+    TableName:"Music",
+    Key: {
+    "Artist":"NoOneYouKnow",
+    "SongTitle": "Call Me Today"
+    },
+    UpdateExpression: "SET Price= :price REMOVE Tags.Composers[2]",
+    ExpressionAttributeValues: {
+        ":price" :3.15
+    },
+    ReturnValues: "ALL_NEW"
+    
+};
+
+dynamodb.updateItem(params, function(err, data) {
+    if (err) console.log(JSON.stringify(err,null,2));
+    else 
+        console.log(JSON.stringify(data,null,2));
+});
+
+=> 
+{
+  "Attributes": {
+    "Tags": {
+      "Composers": [
+        "Smith",
+        "Jones"
+      ],
+      "LengthInSeconds": 214
+    },
+    "Year": 2015,
+    "Price": 3.15,
+    "SongTitle": "Call Me Today",
+    "Genre": "Country",
+    "AlbumTitle": "Somewhat Famous",
+    "Artist": "NoOneYouKnow",
+    "RecordLabel": "Global Records"
+  }
+}
+
+
+
+
+12.
+var params = {
+    TableName:"Music",
+    Key: {
+    "Artist":"Linkin Park",
+    "SongTitle": "In The End"
+    }
+};
+
+
+dynamodb.deleteItem(params, function(err, data) {
+    if (err) console.log(JSON.stringify(err,null,2)); // an error occurred
+    else console.log(JSON.stringify(data,null,2));
+});
+
+=> 
+{}
+
+
+var params = {
+    TableName:"Music"
+};
+
+dynamodb.scan(params, function(err, data) {
+    if (err) console.log(JSON.stringify(err,null,2)); // an error occurred
+    else console.log(JSON.stringify(data,null,2));
+});
+
+=> 
+{
+  "Items": [
+    {
+      "Artist": "Greenday",
+      "AlbumTitle": "American Idiot",
+      "SongTitle": "Holiday"
+    },
+    {
+      "Artist": "Owl City",
+      "AlbumTitle": "Single",
+      "SongTitle": "Fireflies"
+    },
+    {
+      "Year": 2015,
+      "Tags": {
+        "Composers": [
+          "Smith",
+          "Jones"
+        ],
+        "LengthInSeconds": 214
+      },
+      "SongTitle": "Call Me Today",
+      "Price": 3.15,
+      "Genre": "Country",
+      "AlbumTitle": "Somewhat Famous",
+      "Artist": "NoOneYouKnow",
+      "RecordLabel": "Global Records"
+    },
+    {
+      "AlbumTitle": "Somewhat Famous",
+      "Year": 2016,
+      "Tags": {
+        "Composers": [
+          "Smith",
+          "Jones",
+          "Davis"
+        ],
+        "LengthInSeconds": 214
+      },
+      "Artist": "NoOneYouKnow",
+      "SongTitle": "Call Me Whenever"
+    }
+  ],
+  "Count": 4,
+  "ScannedCount": 4
+}

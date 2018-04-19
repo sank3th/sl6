@@ -1,0 +1,44 @@
+SL-6 3. Design Data Model using Cassandra
+
+cqlsh> create keyspace student with
+replication={&#39;class&#39;:&#39;SimpleStrategy&#39;,&#39;replication_factor&#39;:1};
+
+cqlsh> use student;
+
+cqlsh:student> create table students
+... (
+... sid int primary key,
+... class text,
+... sname text,
+... sage int,
+... sdeptid int);
+
+cqlsh:student> create table department
+... (
+... did int primary key,
+... dname text,
+... hod text,
+... no_of_students int);
+
+cqlsh:student> describe table student.students;
+CREATE TABLE student.students (
+sid int PRIMARY KEY,
+class text,
+sage int,
+sdeptid int,
+sname text
+) WITH bloom_filter_fp_chance = 0.01
+AND caching = &#39;{&quot;keys&quot;:&quot;ALL&quot;, &quot;rows_per_partition&quot;:&quot;NONE&quot;}&#39;
+AND comment = &#39;&#39;
+AND compaction = {&#39;class&#39;:
+&#39;org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy&#39;}
+AND compression = {&#39;sstable_compression&#39;:
+&#39;org.apache.cassandra.io.compress.LZ4Compressor&#39;}
+AND dclocal_read_repair_chance = 0.1
+AND default_time_to_live = 0
+AND gc_grace_seconds = 864000
+AND max_index_interval = 2048
+AND memtable_flush_period_in_ms = 0
+AND min_index_interval = 128
+AND read_repair_chance = 0.0
+AND speculative_retry = &#39;99.0PERCENTILE&#39;;

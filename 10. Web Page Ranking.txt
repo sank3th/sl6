@@ -1,0 +1,106 @@
+SL-6 10. Implement Web Page ranking algorithm 
+
+import java.util.Scanner;  
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Comparator;
+
+class Pages implements Comparable<Pages> {
+    public String url;
+    public int auth;
+    public Pages(String url, int auth){
+    	this.url = url;
+    	this.auth = auth;
+    }
+    @Override
+    public int compareTo(Pages other) {
+        return -1 * Integer.valueOf(this.auth).compareTo(other.auth);
+    }
+}
+
+public class HITSAlgo {
+	public static void main(String args[]) {
+		HITSAlgo h = new HITSAlgo();
+		Scanner sc=new Scanner(System.in);
+		System.out.println("Enter No. of URLs: ");
+		int size = sc.nextInt();
+		int i, j, k;
+		int [][] graph = new int[size] [size] ; 
+		int [] hub = new int[size];
+		int [] auth = new int[size];
+		String [] url = new String[size];
+		Pages[] pageArray = new Pages[size];		
+		System.out.println("\nEnter URLs:");
+		for ( i = 0; i < size; i ++ )
+		{
+		         url[i] = sc.next();
+		}	
+		System.out.println("\nEnter Adjacency Matrix:");
+		for ( i = 0; i < size; i ++ )
+		{
+			for(j = 0; j < size; j++)
+		      {
+		         graph[i][j] = sc.nextInt();
+		      }
+		}
+		for ( i = 0; i < size; i ++ )
+		{
+			hub[i]=1;
+		}	
+		for(k=0;k<size;k++)
+		{
+			for ( i = 0; i < size; i++)
+			{
+				auth[i]=0;
+				for (j = 0; j < size; j++)
+				{
+						auth[i] += graph[j][i] * hub[j];
+				}
+			}	
+			for ( i = 0; i < size; i++)
+			{
+				hub[i]=0;
+				for (j = 0; j < size; j++)
+				{
+						hub[i] += graph[i][j] * auth[j];
+				}
+			}
+		}		
+		for ( i = 0; i < size; i ++ )
+		{
+		         pageArray[i] = new Pages(url[i],auth[i]);
+		}
+		Arrays.sort(pageArray);
+		System.out.println("\nPages sorted according to rank:");
+		System.out.println("URL\tAuthority Weight");
+		for ( i = 0; i < size; i ++ )
+		{
+			System.out.println(pageArray[i].url+"\t"+pageArray[i].auth);
+		}	
+		System.out.println("");
+		sc.close();  
+	}
+}
+
+Output:
+Enter No. of URLs: 
+4
+
+Enter URLs:
+google.com
+facebook.com
+instagram.com
+sublime.org
+
+Enter Adjacency Matrix:
+0 1 1 0
+1 0 0 1
+0 1 0 0
+0 0 1 0
+
+Pages sorted according to rank:
+URL	   Authority Weight
+google.com	    90
+instagram.com    55
+sublime.org	55
+facebook.com	    35	

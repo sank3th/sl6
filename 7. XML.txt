@@ -1,0 +1,245 @@
+SL-6 7. Create XML, XML schemas , DTD for any database application and implement min 10 queries using XQuery FLOWR expression and XPath
+
+Books.xml
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE bookstore SYSTEM "books.dtd">
+<bookstore>
+	<book category="COOKING">
+    	<title lang="en">Everyday Italian</title>
+    	<author>Giada De Laurentiis</author>
+    	<year>2005</year>
+    	<price>30.00</price>
+	</book>
+    
+	<book category="COOKING">
+    	<title lang="en">Indian Cuisine</title>
+    	<author>Sanjeev Kapoor</author>
+    	<year>2012</year>
+    	<price>60.00</price>
+	</book>
+    
+	<book category="COOKING">
+    	<title lang="en">British Love</title>
+    	<author>Julia Childs</author>
+    	<year>2015</year>
+    	<price>100.00</price>
+	</book>
+    
+	<book category="CHILDREN">
+    	<title lang="en">Angels and Demons</title>
+    	<author>Dan Brown</author>
+    	<year>2001</year>
+    	<price>29.21</price>
+	</book>
+    
+	<book category="CHILDREN">
+    	<title lang="en">Harry Potter</title>
+    	<author>J K. Rowling</author>
+    	<year>2005</year>
+    	<price>29.99</price>
+	</book>
+    
+	<book category="WEB">
+    	<title lang="en">XQuery Kick Start</title>
+    	<author>James McGovern</author>
+    	<author>Per Bothner</author>
+    	<author>Kurt Cagle</author>
+    	<author>James Linn</author>
+    	<author>Vaidyanathan Nagarajan</author>
+    	<year>2003</year>
+    	<price>49.99</price>
+	</book>
+    
+	<book category="WEB">
+    	<title lang="en">Learning XML</title>
+    	<author>Erik T. Ray</author>
+    	<year>2003</year>
+    	<price>39.95</price>
+	</book>
+    
+	<book category="WEB">
+    	<title lang="en">XPath Made Easy</title>
+    	<author>Vikssy09876</author>
+    	<year>2013</year>
+    	<price>19.95</price>
+	</book>
+    
+	<book category="WEB">
+    	<title lang="en">XML For Dummies</title>
+    	<author>Harold Haas</author>
+    	<year>1999</year>
+    	<price>59.15</price>
+	</book>
+    
+</bookstore>
+
+Books.dtd
+<?xml version="1.0" encoding="UTF-8"?>
+<!ELEMENT bookstore (book+)>
+<!ELEMENT book (title,author+,year,price)>
+<!ELEMENT title (#PCDATA)>
+<!ELEMENT author (#PCDATA)>
+<!ELEMENT year (#PCDATA)>
+<!ELEMENT price (#PCDATA)>
+
+<!ATTLIST book category CDATA #REQUIRED>
+<!ATTLIST title lang CDATA #REQUIRED>
+
+Books.xquery
+let $str := "Output of First Query - Return Books with Price > $30.00"
+return $str,
+
+for $x in doc("books.xml")/bookstore/book
+where $x/price>30
+order by $x/title
+return $x/title,
+
+let $nl := "&#10;"
+return $nl,
+
+let $str := "Output of Second Query - Return Books Published After 2004"
+return $str,
+
+for $y in doc("books.xml")/bookstore/book
+where $y/year>2004
+order by $y/title
+return $y/title,
+
+let $nl := "&#10;"
+return $nl,
+
+let $str := "Output of Third Query - Return Books Written in English"
+return $str,
+
+for $x in doc("books.xml")/bookstore/book
+where $x/title/@lang="en"
+order by $x/title
+return $x/title,
+
+let $nl := "&#10;"
+return $nl,
+
+let $str := "Output of Fourth Query - Return Books whose Category is WEB"
+return $str,
+
+for $x in doc("books.xml")/bookstore/book
+where $x/@category="WEB"
+order by $x/title
+return $x/title,
+
+let $nl := "&#10;"
+return $nl,
+
+let $str := "Output of Fifth Query - Return Books Numbered and In Order"
+return $str,
+
+for $x at $i in doc("books.xml")/bookstore/book/title
+return <book>{$i}. {data($x)}</book>,
+
+let $nl := "&#10;"
+return $nl,
+
+let $str := "Output of Sixth Query - Segregate Books as per Children or Adult Categories"
+return $str,
+
+for $x in doc("books.xml")/bookstore/book
+return if ($x/@category="CHILDREN")
+then <children>{data($x/title)}</children>
+else <adult>{data($x/title)}</adult>,
+
+let $nl := "&#10;"
+return $nl,
+
+let $str := "Output of Seventh Query - Return only the First Two Books"
+return $str,
+
+for $x at $i in doc("books.xml")/bookstore/book
+return if($i<3)
+then <Book>{data($x/title)}</Book>
+else (),
+
+let $nl := "&#10;"
+return $nl,
+
+let $str := "Output of Eighth Query - Total Number of Books"
+return $str,
+
+for $x in doc("books.xml")/bookstore
+return count($x/book),
+
+let $nl := "&#10;"
+return $nl,
+
+let $str := "Output of Ninth Query - Maximum Price of a Book"
+return $str,
+
+for $x in doc("books.xml")/bookstore
+return max($x/book/price)
+
+let $str := "Output of Tenth Query - Return Books With Author Starting with 'V'"
+return $str,
+
+for $y in doc("books.xml")/bookstore/book
+where
+	some $author in $y/author
+	satisfies starts-with($author,'V')
+order by $y/title
+return $y/title
+
+Output:
+<?xml version="1.0" encoding="UTF-8"?>
+Output of First Query - Return Books with Price &gt; $30.00
+<title lang="en">British Love</title>
+<title lang="en">Indian Cuisine</title>
+<title lang="en">Learning XML</title>
+<title lang="en">XML For Dummies</title>
+<title lang="en">XQuery Kick Start</title>
+ Output of Second Query - Return Books Published After 2004
+<title lang="en">British Love</title>
+<title lang="en">Everyday Italian</title>
+<title lang="en">Harry Potter</title>
+<title lang="en">Indian Cuisine</title>
+<title lang="en">XPath Made Easy</title>
+ Output of Third Query - Return Books Written in English
+<title lang="en">Angels and Demons</title>
+<title lang="en">British Love</title>
+<title lang="en">Everyday Italian</title>
+<title lang="en">Harry Potter</title>
+<title lang="en">Indian Cuisine</title>
+<title lang="en">Learning XML</title>
+<title lang="en">XML For Dummies</title>
+<title lang="en">XPath Made Easy</title>
+<title lang="en">XQuery Kick Start</title>
+ Output of Fourth Query - Return Books whose Category is WEB
+<title lang="en">Learning XML</title>
+<title lang="en">XML For Dummies</title>
+<title lang="en">XPath Made Easy</title>
+<title lang="en">XQuery Kick Start</title>
+ Output of Fifth Query - Return Books Numbered and In Order
+<book>1. Everyday Italian</book>
+<book>2. Indian Cuisine</book>
+<book>3. British Love</book>
+<book>4. Angels and Demons</book>
+<book>5. Harry Potter</book>
+<book>6. XQuery Kick Start</book>
+<book>7. Learning XML</book>
+<book>8. XPath Made Easy</book>
+<book>9. XML For Dummies</book>
+ Output of Sixth Query - Segregate Books as per Children or Adult Categories
+<adult>Everyday Italian</adult>
+<adult>Indian Cuisine</adult>
+<adult>British Love</adult>
+<children>Angels and Demons</children>
+<children>Harry Potter</children>
+<adult>XQuery Kick Start</adult>
+<adult>Learning XML</adult>
+<adult>XPath Made Easy</adult>
+<adult>XML For Dummies</adult>
+ Output of Seventh Query - Return only the First Two Books
+<Book>Everyday Italian</Book>
+<Book>Indian Cuisine</Book>
+ Output of Eighth Query - Total Number of Books 9
+ Output of Ninth Query - Maximum Price of a Book 100
+ Output of Tenth Query - Return Books With Author Starting with 'V'
+<title lang="en">XPath Made Easy</title>
+<title lang="en">XQuery Kick Start</title>

@@ -1,0 +1,583 @@
+﻿SL-6 6.Design Persistent Objects using JDO and implement min 10 queries on objects using JDOQL in ObjectDB NOSQL DATABASE
+
+/* Class Employee*/
+
+package tutorial;
+
+import  javax.persistence.*;
+
+@Entity
+
+public class Employee {
+ @Id String name;
+ Double salary;
+ 
+ public Employee(){
+	 
+ }
+ 
+ 
+ public Employee(String name,Double salary)
+ {
+	 this.name=name;
+	 this.salary=salary;
+ }
+ 
+ 
+ public String toString()
+ {
+	 return "Emp name=" + name+ "  salary=" + salary;
+ }
+ 
+ public void setName(String name){
+	 this.name = name;
+ }
+ 
+ public void setSalary(Double salary){
+	 this.salary = salary;
+ }
+ 
+ public void setEmployee(String name, Double salary){
+	 this.name = name;
+	 this.salary = salary;
+ }
+ 
+}
+
+/* Class Main*/
+
+package tutorial;
+
+import java.io.BufferedReader;
+import java.io.IOException;
+import java.io.InputStreamReader;
+import java.util.List;
+import java.util.Scanner;
+
+import javax.persistence.EntityManager;
+import javax.persistence.EntityManagerFactory;
+import javax.persistence.Persistence;
+import javax.persistence.Query;
+import javax.persistence.TypedQuery;
+
+
+public class Main {
+
+	/**
+	 * @param args
+	 */
+	
+	static EntityManagerFactory emf = Persistence.createEntityManagerFactory("employee.odb");
+	static EntityManager em = emf.createEntityManager();
+	
+	static Scanner input = new Scanner(System.in);
+	static BufferedReader bufferedReader = new BufferedReader( new InputStreamReader(System.in));
+	
+	static int n;
+	static String name;
+	static double salary;
+	//static boolean exit = false;
+	
+	static String countQuery = "SELECT count (em1) FROM Employee em1";
+	static String displayAllQuery = "SELECT em1 FROM Employee em1";
+	
+	//static String aggregateQuery = "select count(em1), min(em1.salary), max(em1.salary),avg(em1.salary), sum(em1.salary) from Employee em1";
+	static String moreThanQuery = "SELECT em1 FROM Employee em1 WHERE em1.salary>10000";
+        static String sortBySalaryQuery = "SELECT ems FROM Employee ems ORDER BY ems.salary ASC";
+	static String incrementQuery = "UPDATE Employee e SET e.salary = e.salary * 11 / 10 WHERE salary<10000";
+	
+	public static void main(String[] args) {
+		// TODO Auto-generated method stub
+                int mOption = 0;     // Declare variable for user's option and defaulting to 0
+                do {
+                                        // Setting menuOption equal to return value from showMenu();
+                    mOption = showMenu();
+                    
+                    switch (mOption) {
+                        case 1:             insert();
+                                            break;
+                    
+                        case 2:             display();
+                                            break;
+                    
+                        case 3:             modify();
+                                            break;
+                    
+                        case 4:             delete();
+                                            break;
+                    
+                        case 5:             aggregateFunctions();
+                                            break;
+                        
+                        case 6:             higherSalaries();
+                                            break;
+                            
+                        case 7:             likeName();
+                                            break;
+                        
+                        case 8:             sortBySalary();
+                                            break;
+                        
+                        case 9:             incrementSalary();
+                                            break;
+                    
+                        case 10:            betweenSals();
+                                            break;
+                            
+                        default:            if(mOption!=11)
+                                                System.out.println("Sorry, please enter valid Option");
+
+                    }
+                } while (mOption != 11);
+                // Exiting message when user decides to quit Program
+                System.out.println("Thanks for using this Program...");
+            
+                
+        }
+
+	public static int showMenu() {
+        // Declaring var for user option and defaulting to 0
+            int option = 0;
+            // Printing menu to screen
+            System.out.println("Menu:");
+            System.out.println("1. Insert");
+            System.out.println("2. Display all the records");
+            System.out.println("3. Modify the record on the basis of name");
+            System.out.println("4. Delete the record using name");
+            System.out.println("5. Aggregate Funtions Output.");
+            System.out.println("6. Records with salary more than 10,000 ");
+            System.out.println("7. Records with some Like Name..");
+            System.out.println("8. Display records Sorted By Salary");
+            System.out.println("9. Increment the salary of Employees by 10% where salary is less than 50000");
+            System.out.println("10. Display Order By Name of Employees having salary between 50000 and 100000");
+            System.out.println("11. Quit Program");
+            // Getting user option from above menu
+            System.out.println("Enter Option from above...");
+            option = input.nextInt();
+            return option;
+        }
+        public static void insert(){
+		
+		System.out.println("How many Entries..");
+		n = input.nextInt();
+		em.getTransaction().begin();
+		System.out.println("Name and Salary");
+		for(int i=0; i<n;i++){
+			try{
+				name = bufferedReader.readLine().toString();
+			}
+			catch(Exception e){
+				e.printStackTrace();
+			}
+                        salary = input.nextDouble();
+			Employee em1 = new Employee(name, salary);
+			em.persist(em1);
+		}
+		
+		em.getTransaction().commit();
+				
+	}
+	public static void display(){
+		em.getTransaction().begin();
+		TypedQuery<Employee> e = em.createQuery(displayAllQuery, Employee.class);
+		List <Employee> employees=e.getResultList();
+        if(employees.size()>0)
+        {
+            for(Employee temp:employees)
+            {
+                System.out.println(temp);
+                System.out.println();
+            }
+        }
+        else
+            System.out.println("Database is Empty!");
+        em.getTransaction().commit();
+	}
+	public static void modify(){
+		System.out.println("Enter the name of the Employee to be Modified..");
+		try {
+			name = bufferedReader.readLine().toString();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		em.getTransaction().begin();
+		
+		Employee eModify = em.find(Employee.class, name);
+		if(eModify!=null)
+		{
+			System.out.println("Enter the Salary of the Employee to be Modified..");
+			double salary1 = input.nextDouble();
+			eModify.setSalary( salary1);
+		}
+		else{
+			System.out.println("Employee Name not found..!!");
+		}
+		em.getTransaction().commit();
+	}
+	public static void delete(){
+		System.out.println("Enter the name of the Employee to be Deleted..");
+		try {
+			name = bufferedReader.readLine().toString();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+		em.getTransaction().begin();
+		
+		Employee eDel = em.find(Employee.class, name);
+		if(eDel!=null)
+		{
+			em.remove(eDel);
+                        System.out.println("Deleted Successfully");
+		}
+		else{
+			System.out.println("Employee Name not found..!!");
+		}
+                
+		em.getTransaction().commit();
+	}
+        public static void aggregateFunctions(){
+		em.getTransaction().begin();
+		//TypedQuery e = em.createQuery(aggregateQuery, Employee.class);
+		//Object result = (Object) e.getResultList();
+		//System.out.println(e.getResultList());
+		
+		Query query1 = em.createQuery("Select MAX(e1.salary) from Employee e1");
+		System.out.println("Maximum Salary is : " + query1.getSingleResult());
+                Query query2 = em.createQuery("Select MIN(e2.salary) from Employee e2");
+                System.out.println("Minimum Salary is : " + query2.getSingleResult());
+                Query query3 = em.createQuery("Select count(e3) from Employee e3");
+                System.out.println("No. of Records are : " + query3.getSingleResult());
+                Query query4 = em.createQuery("Select avg(e4.salary) from Employee e4");
+                System.out.println("Average of Salary is : " + query4.getSingleResult());
+                Query query5 = em.createQuery("Select sum(e5.salary) from Employee e5");
+                System.out.println("Sum of Salaries is : " + query5.getSingleResult());
+             
+		em.getTransaction().commit();
+	}
+	public static void higherSalaries(){
+            em.getTransaction().begin();
+            TypedQuery e = em.createQuery(moreThanQuery, Employee.class);
+            List <Employee> employees = e.getResultList();
+            if(employees.size()>0)
+            {
+                for(Employee temp:employees)
+                {
+                    System.out.println(temp);
+                    System.out.println();
+                }
+            }
+            else
+                System.out.println("No Employee having salary more than 10000...!!");
+            em.getTransaction().commit();
+	}
+	
+        
+        public static void likeName(){
+            String likeNameReceived = "";
+            em.getTransaction().begin();
+            try{
+		likeNameReceived = bufferedReader.readLine().toString();
+            }catch(Exception e){
+                e.printStackTrace();
+            }
+            List <Employee> employeesLike = em.createQuery("SELECT e FROM Employee e WHERE e.name LIKE :likeName"
+                    + "").setParameter("likeName", likeNameReceived).getResultList();
+            if(employeesLike.size()>0)
+            {
+                for(Employee temp:employeesLike)
+                    System.out.println(temp);
+                            
+            }
+            else
+                System.out.println("No Matching Records Found..!!");
+            em.getTransaction().commit();
+        }
+        
+        public static void sortBySalary(){
+            em.getTransaction().begin();
+            TypedQuery q = em.createQuery(sortBySalaryQuery, Employee.class);
+            List<Employee> employees = (List<Employee>) q.getResultList();
+            if(employees.size()>0)
+            {
+                for(Employee temp:employees)
+                {
+                    System.out.println(temp);
+                    System.out.println();
+                }
+            }
+            else
+                System.out.println("No Employees..!!");
+            
+          
+            em.getTransaction().commit();
+        }
+	
+	public static void incrementSalary(){
+            em.getTransaction().begin();
+            Query q = em.createQuery("UPDATE Employee e SET e.salary = e.salary*11/10 WHERE e.salary<50000");
+            
+            int updateCount = q.executeUpdate();
+            System.out.println(updateCount + " Records Updated..!!");
+                  
+            em.getTransaction().commit();
+        }
+        
+        public static void betweenSals(){
+            em.getTransaction().begin();
+            Query q = em.createQuery("SELECT e from Employee e WHERE e.salary>50000 && e.salary<100000 ORDER BY e.name");
+            List<Employee> employees = (List<Employee>) q.getResultList();
+            
+            if(employees.size()>0)
+            {
+                for(Employee temp:employees)
+                {
+                    System.out.println(temp);
+                    System.out.println();
+                }
+            }
+            else
+                System.out.println("No Employees..!!");
+              em.getTransaction().commit();
+        }
+}
+
+
+Output:
+
+Menu:
+1. Insert
+2. Display all the records
+3. Modify the record on the basis of name
+4. Delete the record using name
+5. Aggregate Funtions Output.
+6. Records with salary more than 10,000 
+7. Records with some Like Name..
+8. Display records Sorted By Salary
+9. Increment the salary of Employees by 10% where salary is less than 50000
+10. Display Order By Name of Employees having salary between 50000 and 100000
+11. Quit Program
+Enter Option from above...
+1
+How many Entries..
+4
+Name and Salary
+Jane
+35000
+Jon
+55000
+Karen
+30000
+Dell
+25000
+Menu:
+1. Insert
+2. Display all the records
+3. Modify the record on the basis of name
+4. Delete the record using name
+5. Aggregate Funtions Output.
+6. Records with salary more than 10,000 
+7. Records with some Like Name..
+8. Display records Sorted By Salary
+9. Increment the salary of Employees by 10% where salary is less than 50000
+10. Display Order By Name of Employees having salary between 50000 and 100000
+11. Quit Program
+Enter Option from above...
+2
+Emp name=Jon  salary=55000.0
+
+Emp name=Jane  salary=35000.0
+
+Emp name=Karen  salary=30000.0
+
+Emp name=Janice  salary=50000.0
+
+Emp name=Dell  salary=25000.0
+
+Menu:
+1. Insert
+2. Display all the records
+3. Modify the record on the basis of name
+4. Delete the record using name
+5. Aggregate Funtions Output.
+6. Records with salary more than 10,000 
+7. Records with some Like Name..
+8. Display records Sorted By Salary
+9. Increment the salary of Employees by 10% where salary is less than 50000
+10. Display Order By Name of Employees having salary between 50000 and 100000
+11. Quit Program
+Enter Option from above...
+4
+Enter the name of the Employee to be Deleted..
+Dell
+Deleted Successfully
+Menu:
+1. Insert
+2. Display all the records
+3. Modify the record on the basis of name
+4. Delete the record using name
+5. Aggregate Funtions Output.
+6. Records with salary more than 10,000 
+7. Records with some Like Name..
+8. Display records Sorted By Salary
+9. Increment the salary of Employees by 10% where salary is less than 50000
+10. Display Order By Name of Employees having salary between 50000 and 100000
+11. Quit Program
+Enter Option from above...
+1
+How many Entries..
+1
+Name and Salary
+Dell
+25000
+Menu:
+1. Insert
+2. Display all the records
+3. Modify the record on the basis of name
+4. Delete the record using name
+5. Aggregate Funtions Output.
+6. Records with salary more than 10,000 
+7. Records with some Like Name..
+8. Display records Sorted By Salary
+9. Increment the salary of Employees by 10% where salary is less than 50000
+10. Display Order By Name of Employees having salary between 50000 and 100000
+11. Quit Program
+Enter Option from above...
+5
+Maximum Salary is : 55000.0
+Minimum Salary is : 25000.0
+No. of Records are : 5
+Average of Salary is : 39000.0
+Sum of Salaries is : 195000.0
+Menu:
+1. Insert
+2. Display all the records
+3. Modify the record on the basis of name
+4. Delete the record using name
+5. Aggregate Funtions Output.
+6. Records with salary more than 10,000 
+7. Records with some Like Name..
+8. Display records Sorted By Salary
+9. Increment the salary of Employees by 10% where salary is less than 50000
+10. Display Order By Name of Employees having salary between 50000 and 100000
+11. Quit Program
+Enter Option from above...
+6
+Emp name=Jon  salary=55000.0
+
+Emp name=Jane  salary=35000.0
+
+Emp name=Karen  salary=30000.0
+
+Emp name=Janice  salary=50000.0
+
+Emp name=Dell  salary=25000.0
+
+Menu:
+1. Insert
+2. Display all the records
+3. Modify the record on the basis of name
+4. Delete the record using name
+5. Aggregate Funtions Output.
+6. Records with salary more than 10,000 
+7. Records with some Like Name..
+8. Display records Sorted By Salary
+9. Increment the salary of Employees by 10% where salary is less than 50000
+10. Display Order By Name of Employees having salary between 50000 and 100000
+11. Quit Program
+Enter Option from above...
+7
+Dell
+Emp name=Dell  salary=25000.0
+Menu:
+1. Insert
+2. Display all the records
+3. Modify the record on the basis of name
+4. Delete the record using name
+5. Aggregate Funtions Output.
+6. Records with salary more than 10,000 
+7. Records with some Like Name..
+8. Display records Sorted By Salary
+9. Increment the salary of Employees by 10% where salary is less than 50000
+10. Display Order By Name of Employees having salary between 50000 and 100000
+11. Quit Program
+Enter Option from above...
+1
+How many Entries..
+1
+Name and Salary
+Eliza
+5000
+Menu:
+1. Insert
+2. Display all the records
+3. Modify the record on the basis of name
+4. Delete the record using name
+5. Aggregate Funtions Output.
+6. Records with salary more than 10,000 
+7. Records with some Like Name..
+8. Display records Sorted By Salary
+9. Increment the salary of Employees by 10% where salary is less than 50000
+10. Display Order By Name of Employees having salary between 50000 and 100000
+11. Quit Program
+Enter Option from above...
+8
+Emp name=Eliza  salary=5000.0
+
+Emp name=Dell  salary=25000.0
+
+Emp name=Karen  salary=30000.0
+
+Emp name=Jane  salary=35000.0
+
+Emp name=Janice  salary=50000.0
+
+Emp name=Jon  salary=55000.0
+
+Menu:
+1. Insert
+2. Display all the records
+3. Modify the record on the basis of name
+4. Delete the record using name
+5. Aggregate Funtions Output.
+6. Records with salary more than 10,000 
+7. Records with some Like Name..
+8. Display records Sorted By Salary
+9. Increment the salary of Employees by 10% where salary is less than 50000
+10. Display Order By Name of Employees having salary between 50000 and 100000
+11. Quit Program
+Enter Option from above...
+9
+4 Records Updated..!!
+Menu:
+1. Insert
+2. Display all the records
+3. Modify the record on the basis of name
+4. Delete the record using name
+5. Aggregate Funtions Output.
+6. Records with salary more than 10,000 
+7. Records with some Like Name..
+8. Display records Sorted By Salary
+9. Increment the salary of Employees by 10% where salary is less than 50000
+10. Display Order By Name of Employees having salary between 50000 and 100000
+11. Quit Program
+Enter Option from above...
+10
+Emp name=Jon  salary=55000.0
+
+Menu:
+1. Insert
+2. Display all the records
+3. Modify the record on the basis of name
+4. Delete the record using name
+5. Aggregate Funtions Output.
+6. Records with salary more than 10,000 
+7. Records with some Like Name..
+8. Display records Sorted By Salary
+9. Increment the salary of Employees by 10% where salary is less than 50000
+10. Display Order By Name of Employees having salary between 50000 and 100000
+11. Quit Program
+Enter Option from above...
+11
+Thanks for using this Program...

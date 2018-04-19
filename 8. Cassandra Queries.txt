@@ -1,0 +1,185 @@
+1. Create Keyspace.
+cqlsh> create keyspace student with replication={'class':'SimpleStrategy','replication_factor':1};
+
+2. Use Keyspace.
+cqlsh> use student
+   ... ;
+3. Create table.
+cqlsh:student> create table students
+           ... (
+           ... sid int primary key,
+           ... sname text,
+           ... sage int,
+           ... sdeptid int);
+cqlsh:student> create table department
+           ... ( 
+           ... did int primary key,
+           ... dname text,
+           ... hod text,
+           ... no_of_students int);
+
+4. Alter  ( add ) and describe table.
+cqlsh:student> alter table students add class text;
+cqlsh:student> describe table student.students;
+
+CREATE TABLE student.students (
+    sid int PRIMARY KEY,
+    class text,
+    sage int,
+    sdeptid int,
+    sname text
+) WITH bloom_filter_fp_chance = 0.01
+    AND caching = '{"keys":"ALL", "rows_per_partition":"NONE"}'
+    AND comment = ''
+    AND compaction = {'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy'}
+    AND compression = {'sstable_compression': 'org.apache.cassandra.io.compress.LZ4Compressor'}
+    AND dclocal_read_repair_chance = 0.1
+    AND default_time_to_live = 0
+    AND gc_grace_seconds = 864000
+    AND max_index_interval = 2048
+    AND memtable_flush_period_in_ms = 0
+    AND min_index_interval = 128
+    AND read_repair_chance = 0.0
+    AND speculative_retry = '99.0PERCENTILE';
+
+5. Alter  ( drop ) and describe table.
+cqlsh:student> alter table students drop sage;
+cqlsh:student> describe table student.students;
+
+CREATE TABLE student.students (
+    sid int PRIMARY KEY,
+    class text,
+    sdeptid int,
+    sname text
+) WITH bloom_filter_fp_chance = 0.01
+    AND caching = '{"keys":"ALL", "rows_per_partition":"NONE"}'
+    AND comment = ''
+    AND compaction = {'class': 'org.apache.cassandra.db.compaction.SizeTieredCompactionStrategy'}
+    AND compression = {'sstable_compression': 'org.apache.cassandra.io.compress.LZ4Compressor'}
+    AND dclocal_read_repair_chance = 0.1
+    AND default_time_to_live = 0
+    AND gc_grace_seconds = 864000
+    AND max_index_interval = 2048
+    AND memtable_flush_period_in_ms = 0
+    AND min_index_interval = 128
+    AND read_repair_chance = 0.0
+    AND speculative_retry = '99.0PERCENTILE';
+
+6. Insert Values.
+cqlsh:student> insert into students(sid,class,sdeptid,sname) values(101,'BE',1,'sujay');
+cqlsh:student> insert into students(sid,class,sdeptid,sname) values(102,'BE',1,'sanjay');
+cqlsh:student> insert into students(sid,class,sdeptid,sname) values(103,'SE',2,'karen');
+
+7.Display Table.
+cqlsh:student> select * from students;
+
+ sid | class | sdeptid | sname
+-----+-------+---------+---------
+ 102 |    BE |       1 |  sanjay
+ 101 |    BE |       1 |   sujay
+ 103 |    SE |       2 | karen
+
+(3 rows)
+
+8. Update Table.
+cqlsh:student> update students set class='FE' where sid=102;
+cqlsh:student> select * from students;
+
+ sid | class | sdeptid | sname
+-----+-------+---------+---------
+ 102 |    FE |       1 |  sanjay
+ 101 |    BE |       1 |   sujay
+ 103 |    SE |       2 | karen
+
+(3 rows)
+cqlsh:student> insert into department(did,dname,hod,no_of_students) values(1,'comp','rajesh',120);
+cqlsh:student> insert into department(did,dname,hod,no_of_students) values(2,'IT','kulkarni',60);
+cqlsh:student> insert into department(did,dname,hod,no_of_students) values(3,'mechanical','kedia',180);
+cqlsh:student> select * from department ;
+ did | dname      | hod      | no_of_students
+-----+------------+----------+----------------
+   1 |       comp |    rajesh |            120
+   2 |         IT | jaya|             60
+   3 | mechanical |    kedia |            180
+
+(3 rows)
+
+9. Where clause.
+cqlsh:student> select * from department where did=1 ;
+
+ did | dname | hod   | no_of_students
+-----+-------+-------+----------------
+   1 |  comp | rajesh |            120
+
+(1 rows)
+
+10. Copy table To csv file.
+cqlsh:student> COPY students(sid, sname,class, sdeptid) TO 'students.csv';
+Using 3 child processes
+
+Starting copy of student.students with columns [sid, sname, class, sdeptid].
+Processed: 3 rows; Rate:      14 rows/s; Avg. rate:      14 rows/s
+3 rows exported to 1 files in 0.227 seconds.
+cqlsh:student> drop table students;
+
+cqlsh:student> create table students ( sid int , class text, sdeptid int,sname text,primary key(sid,sdeptid));
+
+11. Copy table From csv file.
+cqlsh:student> COPY students(sid, sname,class, sdeptid) FROM 'students.csv';
+Using 3 child processes
+
+Starting copy of student.students with columns [sid, sname, class, sdeptid].
+Processed: 3 rows; Rate:       5 rows/s; Avg. rate:       8 rows/s
+3 rows imported from 1 files in 0.378 seconds (0 skipped).
+cqlsh:student> select * from students;
+
+ sid | sdeptid | class | sname
+-----+---------+-------+---------
+ 102 |       1 |    FE |  sanjay
+ 101 |       1 |    BE |   sujay
+ 103 |       2 |    SE | karen
+
+
+12.Drop table.
+cqlsh:student> drop table students;
+cqlsh:student> create table students ( sid int , class text, sdeptid int,sname text,primary key(sdeptid,sid));
+
+cqlsh:student> insert into students(sid,class,sdeptid,sname) values(101,'BE',1,'sujay');
+cqlsh:student> insert into students(sid,class,sdeptid,sname) values(102,'BE',1,'sanjay');
+cqlsh:student>  insert into students(sid,class,sdeptid,sname) values(103,'SE',2,'karen');
+cqlsh:student>  insert into students(sid,class,sdeptid,sname) values(104,'SE',2,'kai');
+cqlsh:student>  insert into students(sid,class,sdeptid,sname) values(105,'FE',2,'reqa');
+cqlsh:student> select * from students;
+
+ sdeptid | sid | class | sname
+---------+-----+-------+---------
+       1 | 101 |    BE |   sujay
+       1 | 102 |    BE |  sanjay
+       2 | 103 |    SE | karen
+       2 | 104 |    SE | kai
+       2 | 105 |    FE |     reqa
+
+(5 rows)
+cqlsh:student>  insert into students(sid,class,sdeptid,sname) values(106,'FE',1,'dutt');
+cqlsh:student> select * from students;
+ sdeptid | sid | class | sname
+---------+-----+-------+---------
+       1 | 101 |    BE |   sujay
+       1 | 102 |    BE |  sanjay
+       1 | 106 |    FE |  dutt
+       2 | 103 |    SE | karen
+       2 | 104 |    SE | kai
+       2 | 105 |    FE |     reqa
+
+(6 rows)
+
+13.Order By 
+cqlsh:student> select * from students where sdeptid=1 order by sid desc;
+
+ sdeptid | sid | class | sname
+---------+-----+-------+--------
+       1 | 106 |    FE | dutt
+       1 | 102 |    BE | sanjay
+       1 | 101 |    BE |  sujay
+
+(3 rows)
